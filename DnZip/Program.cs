@@ -70,7 +70,8 @@ namespace DnZip
                 zipOutputStream.Finish();
                 zipOutputStream.Close();
 
-                File.WriteAllBytes(zipDir.Parent.FullName, memoryStream.ToArray());
+                var zipFileFullName = Path.Combine(zipDir.Parent.FullName, $"{zipDir.Name}.zip");
+                File.WriteAllBytes(zipFileFullName, memoryStream.ToArray());
             }
 
             return 0;
