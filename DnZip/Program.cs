@@ -39,6 +39,8 @@ namespace DnZip
                 }
                 zip.Password = password;
             }
+            // FIXME: 対象ディレクトリの中身だけが書庫化されるため、解凍すると中身が散らばる
+            // HACK: 複数ファイル指定に対応
             zip.CreateZip(
                 zipFileName: Path.Combine(targetDirectory.Parent.FullName, $"{targetDirectory.Name}.zip"),
                 targetDirectory.FullName,
