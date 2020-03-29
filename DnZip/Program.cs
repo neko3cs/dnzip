@@ -15,6 +15,7 @@ namespace DnZip
         [PrimaryCommand]
         public int CompressZipFile(
             [Argument]string path,
+            [Option('r')]bool recursePaths,
             [Option('e')]bool encrypt
         )
         {
@@ -46,7 +47,7 @@ namespace DnZip
             zip.CreateZip(
                 zipFileName: Path.Combine(targetDirectory.Parent.FullName, $"{targetDirectory.Name}.zip"),
                 targetDirectory.FullName,
-                recurse: true,
+                recurse: recursePaths,
                 fileFilter: null,
                 directoryFilter: null
             );
