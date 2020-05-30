@@ -3,9 +3,14 @@
   <PropertyGroup>
     <OutputType>Exe</OutputType>
     <TargetFramework>netcoreapp3.1</TargetFramework>
+
     <PackAsTool>true</PackAsTool>
     <ToolCommandName>dnzip</ToolCommandName>
     <PackageOutputPath>./nupkg</PackageOutputPath>
+    
+    <PackageId>DnZip</PackageId>
+    <Version>0.1.0</Version>
+    <Authors>neko3cs</Authors>
   </PropertyGroup>
 
   <ItemGroup>
