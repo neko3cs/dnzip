@@ -3,14 +3,17 @@
   <PropertyGroup>
     <OutputType>Exe</OutputType>
     <TargetFramework>netcoreapp3.1</TargetFramework>
-
+    <PackageId>DnZip</PackageId>
+    <PackageTags>Archive;ZIP;</PackageTags>
+    <PackageProjectUrl>https://github.com/neko3cs/dn-zip</PackageProjectUrl>
+    <PackageLicenseExpression>MIT</PackageLicenseExpression>
+    <RepositoryType>git</RepositoryType>
+    <RepositoryUrl>https://github.com/neko3cs/dn-zip.git</RepositoryUrl>
+    <Version>0.1.1</Version>
+    <Authors>neko3cs</Authors>
     <PackAsTool>true</PackAsTool>
     <ToolCommandName>dnzip</ToolCommandName>
     <PackageOutputPath>./nupkg</PackageOutputPath>
-    
-    <PackageId>DnZip</PackageId>
-    <Version>0.1.0</Version>
-    <Authors>neko3cs</Authors>
   </PropertyGroup>
 
   <ItemGroup>
