@@ -6,6 +6,8 @@ Default windows archiver (it is in right click context menu) can not encrypted z
 
 So, you can use this ```zip``` command like linux ```zip``` command.
 
+Download here 👉 [DnZip - nuget.org](https://www.nuget.org/packages/DnZip)
+
 ## How to use
 
 ### Syntax
