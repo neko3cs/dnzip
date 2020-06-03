@@ -2,9 +2,7 @@
 using System.IO;
 using System.Text;
 using Cocona;
-using ICSharpCode.SharpZipLib.Checksum;
-using ICSharpCode.SharpZipLib.Core;
-using ICSharpCode.SharpZipLib.Zip;
+using Ionic.Zip;
 
 namespace DnZip
 {
@@ -20,7 +18,7 @@ namespace DnZip
         public int CompressZipFile(
             [Argument] string archiveFilePath,
             [Argument] string sourceDirectoryPath,
-            [Option('r')] bool recurse,
+            [Option('r')] bool recursePaths,
             [Option('e')] bool encrypt
         )
         {
@@ -43,11 +41,16 @@ namespace DnZip
                 }
             }
 
-            // FIXME: macOS, Windows 共に標準のアーカイバーで解凍が出来ない
-            // FIXME: 1 エントリーしかアーカイブされない(macOS, unzip)
-            // FIXME: アーカイブしても空のフォルダしか生成されない(Windows10, Expand-Archive)
+            // FIXME: サブディレクトリに既出ファイル名のファイルがあるとエラーする
             var archiveFile = new FileInfo(archiveFilePath);
-            CreateArchive(archiveFile, sourceDirectory, recurse, password);
+            try
+            {
+                CreateArchive(archiveFile, sourceDirectory, recursePaths, password);
+            }
+            catch (System.Exception e)
+            {
+                Console.WriteLine(e.ToString());
+            }
 
             return 0;
         }
@@ -122,57 +125,37 @@ namespace DnZip
         private void CreateArchive(
             FileInfo archiveFile,
             DirectoryInfo sourceDirectory,
-            bool recurse,
+            bool recursePaths,
             string password
         )
         {
-            using (FileStream outputFileStream = File.Create(archiveFile.FullName))
-            using (var zipOutputStream = new ZipOutputStream(outputFileStream))
+            Encoding.RegisterProvider(CodePagesEncodingProvider.Instance);
+            using (var zip = new ZipFile(Encoding.GetEncoding("Shift_JIS")))
             {
-                // zipOutputStream.UseZip64 = UseZip64.Off;
-                zipOutputStream.SetLevel(9);
-                if (!string.IsNullOrEmpty(password)) zipOutputStream.Password = password;
-                var crc = new Crc32();
-                CompressDirectory(zipOutputStream, sourceDirectory, crc, recurse);
+                zip.CompressionLevel = Ionic.Zlib.CompressionLevel.BestCompression;
+                if (!string.IsNullOrEmpty(password)) zip.Password = password;
+                AddEntry(zip, sourceDirectory, sourceDirectory, recursePaths);
+                zip.Save(archiveFile.FullName);
             }
         }
 
-        private void CompressDirectory(
-            ZipOutputStream zipOutputStream,
-            DirectoryInfo directory,
-            Crc32 crc,
-            bool recurse
+        private void AddEntry(
+            ZipFile zip,
+            DirectoryInfo rootDir,
+            DirectoryInfo targetDir,
+            bool recursePaths
         )
         {
-            foreach (var file in directory.GetFiles())
+            foreach (var file in targetDir.GetFiles())
             {
-                var entry = new ZipEntry(
-                    ZipEntry.CleanName(file.Name)
-                )
-                {
-                    DateTime = file.LastWriteTime,
-                    Size = file.Length
-                };
-                // var bufferForCrc = File.ReadAllBytes(file.FullName);
-                // crc.Reset();
-                // crc.Update(bufferForCrc);
-                // entry.Crc = crc.Value;
-                zipOutputStream.PutNextEntry(entry);
-                // zipOutputStream.Write(bufferForCrc, 0, bufferForCrc.Length);
-
-                var bufferForCopy = new byte[4096];
-                using (FileStream inputFileStream = File.OpenRead(file.FullName))
-                {
-                    StreamUtils.Copy(inputFileStream, zipOutputStream, bufferForCopy);
-                }
-                zipOutputStream.CloseEntry();
+                zip.AddFile(file.FullName, targetDir.FullName.Replace(rootDir.FullName, string.Empty));
             }
-
-            if (recurse)
+            if (recursePaths)
             {
-                foreach (var subDirectory in directory.GetDirectories())
+                foreach (var subDir in targetDir.GetDirectories())
                 {
-                    CompressDirectory(zipOutputStream, subDirectory, crc, recurse);
+                    zip.AddDirectory(subDir.FullName, subDir.Name);
+                    AddEntry(zip, rootDir, subDir, recursePaths);
                 }
             }
         }
