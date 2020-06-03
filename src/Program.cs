@@ -1,5 +1,6 @@
 ﻿using System;
 using System.IO;
+using System.Linq;
 using System.Text;
 using Cocona;
 using Ionic.Zip;
@@ -156,6 +157,10 @@ namespace DnZip
             {
                 foreach (var subDir in targetDir.GetDirectories())
                 {
+                    if (!subDir.GetFiles().Any())
+                    {
+                        zip.AddDirectory(subDir.FullName, subDir.Name);
+                    }
                     AddEntry(zip, rootDir, subDir, recursePaths);
                 }
             }
