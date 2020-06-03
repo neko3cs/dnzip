@@ -8,6 +8,7 @@ using Ionic.Zip;
 namespace DnZip
 {
     // HACK: 複数ファイル指定に対応
+    // HACK: --no-dir-entries(-D) に対応
     class Program
     {
         static void Main(string[] args)
