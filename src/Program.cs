@@ -41,7 +41,6 @@ namespace DnZip
                 }
             }
 
-            // FIXME: サブディレクトリに既出ファイル名のファイルがあるとエラーする
             var archiveFile = new FileInfo(archiveFilePath);
             try
             {
@@ -148,13 +147,15 @@ namespace DnZip
         {
             foreach (var file in targetDir.GetFiles())
             {
-                zip.AddFile(file.FullName, targetDir.FullName.Replace(rootDir.FullName, string.Empty));
+                zip.AddFile(
+                    fileName: file.FullName,
+                    directoryPathInArchive: targetDir.FullName.Substring(rootDir.FullName.Length)
+                );
             }
             if (recursePaths)
             {
                 foreach (var subDir in targetDir.GetDirectories())
                 {
-                    zip.AddDirectory(subDir.FullName, subDir.Name);
                     AddEntry(zip, rootDir, subDir, recursePaths);
                 }
             }
