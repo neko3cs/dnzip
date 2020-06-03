@@ -1,4 +1,4 @@
-# dn-zip
+# dnzip
 
 .NET Core で作った ZIP 圧縮ツール。
 
