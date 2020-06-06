@@ -4,7 +4,7 @@ Zip archive cli tool made with .NET Core Tools.
 
 Default windows archiver (it is in right click context menu) can not encrypted zip and very slow.
 
-So, you can use this ```zip``` command like linux ```zip``` command.
+So, you can use this ```dnzip``` command like linux ```zip``` command.
 
 Download here 👉 [DnZip - nuget.org](https://www.nuget.org/packages/DnZip)
 
