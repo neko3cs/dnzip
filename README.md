@@ -25,5 +25,5 @@ $ dnzip [options] <archiveFilePath> <sourceDirectoryPath>
 
 |Otion|Function|
 |--|--|
-|```-r```, ```recursePaths```|Archive with the directory structure recursively.|
+|```-r```, ```--recursePaths```|Archive with the directory structure recursively.|
 |```-e```, ```--encrypt```|Encrypt the archived file.|
