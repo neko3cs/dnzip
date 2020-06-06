@@ -18,7 +18,7 @@ $ dnzip [options] <archiveFilePath> <sourceDirectoryPath>
 
 |Argument|Mean|
 |--|--|
-|```archiveFilePath```|Archive with the directory structure recursively.|
+|```archiveFilePath```|Archived file path that outputed by this command.|
 |```sourceDirectoryPath```|Target directory path that include files and directories you wanna archive.|
 
 ### Options
