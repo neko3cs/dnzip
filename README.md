@@ -1,6 +1,6 @@
 # dnzip
 
-Zip archive cli tool made with .NET Core Tools.
+Zip archive cli tool made with .NET Tools.
 
 Default windows archiver (it is in right click context menu) can not create encrypted zip and very slow.
 
@@ -12,8 +12,8 @@ Download here 👉 [DnZip - nuget.org](https://www.nuget.org/packages/DnZip)
 
 ### Syntax
 
-```
-$ dnzip [options] <archiveFilePath> <sourceDirectoryPath>
+```sh
+dnzip [options] <archiveFilePath> <sourceDirectoryPath>
 ```
 
 |Argument|Mean|
@@ -25,5 +25,5 @@ $ dnzip [options] <archiveFilePath> <sourceDirectoryPath>
 
 |Otion|Function|
 |--|--|
-|```-r```, ```--recursePaths```|Archive with the directory structure recursively.|
+|```-r```, ```--recurse```|Archive with the directory structure recursively.|
 |```-e```, ```--encrypt```|Encrypt the archived file.|
