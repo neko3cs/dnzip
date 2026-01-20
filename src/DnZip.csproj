@@ -17,8 +17,12 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="Cocona.Lite" Version="2.2.0" />
+    <PackageReference Include="ConsoleAppFramework" Version="5.7.13">
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+      <PrivateAssets>all</PrivateAssets>
+    </PackageReference>
     <PackageReference Include="DotNetZip" Version="1.16.0" />
+    <PackageReference Include="Microsoft.Extensions.Hosting" Version="10.0.2" />
     <PackageReference Include="Sharprompt" Version="3.0.1" />
   </ItemGroup>
 

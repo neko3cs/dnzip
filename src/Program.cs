@@ -1,26 +1,22 @@
 ﻿using System;
 using System.IO;
-using Cocona;
+using System.Threading.Tasks;
 using Sharprompt;
+using ConsoleAppFramework;
 
 namespace DnZip
 {
   // HACK: 複数ファイル指定に対応
   // HACK: --no-dir-entries(-D) に対応
-  class Program
+  public class Program
   {
-    static void Main(string[] args)
-    {
-      CoconaLiteApp.Run<Program>(args);
-    }
+    static async Task Main(string[] args) => await ConsoleApp.RunAsync(args, Compress);
 
-    [PrimaryCommand]
-    public static int CompressZipFile(
-        [Argument] string archiveFilePath,
-        [Argument] string sourceDirectoryPath,
-        [Option('r')] bool recursePaths,
-        [Option('e')] bool encrypt
-    )
+    public static int Compress(
+      string archiveFilePath,
+      string sourceDirectoryPath,
+      bool recurse = false,
+      bool encrypt = false)
     {
       if (string.IsNullOrEmpty(archiveFilePath)) return 1;
       if (string.IsNullOrEmpty(sourceDirectoryPath)) return 1;
@@ -42,7 +38,7 @@ namespace DnZip
       }
       try
       {
-        ZipArchiver.CreateArchive(new FileInfo(archiveFilePath), sourceDirectory, recursePaths, password);
+        ZipArchiver.CreateArchive(new FileInfo(archiveFilePath), sourceDirectory, recurse, password);
       }
       catch (Exception e)
       {
