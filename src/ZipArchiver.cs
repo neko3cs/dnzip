@@ -11,7 +11,7 @@ public class ZipArchiver
     Encoding.RegisterProvider(CodePagesEncodingProvider.Instance);
   }
 
-  public void CreateArchive(
+  public static void CreateArchive(
               FileInfo archiveFile,
               DirectoryInfo sourceDirectory,
               bool recursePaths,

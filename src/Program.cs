@@ -1,6 +1,7 @@
 ﻿using System;
 using System.IO;
 using Cocona;
+using Sharprompt;
 
 namespace DnZip
 {
@@ -33,8 +34,7 @@ namespace DnZip
             var password = string.Empty;
             if (encrypt)
             {
-                var reader = new PasswordReader();
-                if (!reader.TryGetPasswordFromConsole(out password))
+                if (!TryGetPasswordFromConsole(out password))
                 {
                     Console.WriteLine("Error: Password verification failed.");
                     return 1;
@@ -42,14 +42,25 @@ namespace DnZip
             }
             try
             {
-                var zip = new ZipArchiver();
-                zip.CreateArchive(new FileInfo(archiveFilePath), sourceDirectory, recursePaths, password);
+                ZipArchiver.CreateArchive(new FileInfo(archiveFilePath), sourceDirectory, recursePaths, password);
             }
             catch (Exception e)
             {
                 Console.WriteLine(e.ToString());
             }
             return 0;
+        }
+
+        public static bool TryGetPasswordFromConsole(out string password)
+        {
+            password = string.Empty;
+            var pw1 = Prompt.Password("Enter password: ");
+            var pw2 = Prompt.Password("Verify password: ");
+
+            if (!pw1.Equals(pw2)) return false;
+
+            password = pw1;
+            return true;
         }
     }
 }
