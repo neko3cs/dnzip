@@ -49,7 +49,8 @@ namespace DnZip
       }
       catch (Exception e)
       {
-        Console.WriteLine(e.ToString());
+        Console.WriteLine(e);
+        return 1;
       }
       return 0;
     }
