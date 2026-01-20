@@ -1,6 +1,5 @@
 ﻿using System;
 using System.IO;
-using System.Text;
 using Cocona;
 
 namespace DnZip
@@ -15,7 +14,7 @@ namespace DnZip
         }
 
         [PrimaryCommand]
-        public int CompressZipFile(
+        public static int CompressZipFile(
             [Argument] string archiveFilePath,
             [Argument] string sourceDirectoryPath,
             [Option('r')] bool recursePaths,
@@ -46,7 +45,7 @@ namespace DnZip
                 var zip = new ZipArchiver();
                 zip.CreateArchive(new FileInfo(archiveFilePath), sourceDirectory, recursePaths, password);
             }
-            catch (System.Exception e)
+            catch (Exception e)
             {
                 Console.WriteLine(e.ToString());
             }
