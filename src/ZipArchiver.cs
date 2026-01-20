@@ -1,6 +1,4 @@
-﻿using System;
-using System.IO;
-using System.Linq;
+﻿using System.IO;
 using System.Text;
 using Ionic.Zip;
 
@@ -8,6 +6,11 @@ namespace DnZip;
 
 public class ZipArchiver
 {
+  static ZipArchiver()
+  {
+    Encoding.RegisterProvider(CodePagesEncodingProvider.Instance);
+  }
+
   public void CreateArchive(
               FileInfo archiveFile,
               DirectoryInfo sourceDirectory,
@@ -15,40 +18,36 @@ public class ZipArchiver
               string password
           )
   {
-    Encoding.RegisterProvider(CodePagesEncodingProvider.Instance);
-    using (var zip = new ZipFile(Encoding.GetEncoding("Shift_JIS")))
+    using var zip = new ZipFile(Encoding.GetEncoding("Shift_JIS"))
     {
-      zip.CompressionLevel = Ionic.Zlib.CompressionLevel.BestCompression;
-      if (!string.IsNullOrEmpty(password)) zip.Password = password;
-      AddEntry(zip, sourceDirectory, sourceDirectory, recursePaths);
-      zip.Save(archiveFile.FullName);
-    }
+      CompressionLevel = Ionic.Zlib.CompressionLevel.BestCompression
+    };
+    if (!string.IsNullOrEmpty(password)) zip.Password = password;
+    AddEntry(zip, sourceDirectory, sourceDirectory, recursePaths);
+    zip.Save(archiveFile.FullName);
   }
 
-  private void AddEntry(
+  private static void AddEntry(
       ZipFile zip,
-      DirectoryInfo rootDir,
-      DirectoryInfo targetDir,
+      DirectoryInfo root,
+      DirectoryInfo target,
       bool recursePaths
   )
   {
-    foreach (var file in targetDir.GetFiles())
+    foreach (var file in target.GetFiles())
     {
-      zip.AddFile(
-          fileName: file.FullName,
-          directoryPathInArchive: targetDir.FullName.Substring(rootDir.FullName.Length)
-      );
+      var entryPath = Path.GetRelativePath(root.FullName, file.FullName);
+      zip.AddFile(file.FullName, Path.GetDirectoryName(entryPath));
     }
-    if (recursePaths)
+
+    if (!recursePaths) return;
+
+    foreach (var subDir in target.GetDirectories())
     {
-      foreach (var subDir in targetDir.GetDirectories())
-      {
-        if (!subDir.GetFiles().Any())
-        {
-          zip.AddDirectory(subDir.FullName, subDir.Name);
-        }
-        AddEntry(zip, rootDir, subDir, recursePaths);
-      }
+      if (subDir.GetFiles().Length == 0)
+        zip.AddDirectory(subDir.FullName, subDir.Name);
+
+      AddEntry(zip, root, subDir, recursePaths);
     }
   }
 }

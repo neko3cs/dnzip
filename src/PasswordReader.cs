@@ -8,11 +8,10 @@ public class PasswordReader
   public bool TryGetPasswordFromConsole(out string password)
   {
     password = string.Empty;
-
     Console.Write("Enter password: ");
-    var pw1 = ConsoleReadPassword();
+    var pw1 = ReadPassword();
     Console.Write("Verify password: ");
-    var pw2 = ConsoleReadPassword();
+    var pw2 = ReadPassword();
 
     if (!pw1.Equals(pw2)) return false;
 
@@ -20,55 +19,18 @@ public class PasswordReader
     return true;
   }
 
-  private string ConsoleReadPassword()
+  private static string ReadPassword()
   {
     var password = new StringBuilder();
-
-    while (true)
+    ConsoleKeyInfo key;
+    while ((key = Console.ReadKey(true)).Key != ConsoleKey.Enter)
     {
-      var keyinfo = Console.ReadKey(intercept: true);
-
-      if (keyinfo.Key.Equals(ConsoleKey.Enter))
-      {
-        Console.WriteLine();
-        return password.ToString();
-      }
-      else if (keyinfo.Key.Equals(ConsoleKey.Backspace))
-      {
-        if (password.Length > 0)
-        {
-          password.Length -= 1;
-          continue;
-        }
-      }
-      else if (Char.IsLetter(keyinfo.KeyChar))
-      {
-        if ((keyinfo.Modifiers & ConsoleModifiers.Shift) == 0)
-        {
-          password.Append(keyinfo.KeyChar);
-          continue;
-        }
-        else
-        {
-          if (Console.CapsLock)
-          {
-            password.Append(Char.ToLower(keyinfo.KeyChar));
-            continue;
-          }
-          else
-          {
-            password.Append(Char.ToUpper(keyinfo.KeyChar));
-            continue;
-          }
-        }
-      }
-      else if (!Char.IsControl(keyinfo.KeyChar))
-      {
-        password.Append(keyinfo.KeyChar);
-        continue;
-      }
-
-      Console.Beep();
+      if (key.Key == ConsoleKey.Backspace && password.Length > 0)
+        password.Length--;
+      else if (!char.IsControl(key.KeyChar))
+        password.Append(key.KeyChar);
     }
+    Console.WriteLine();
+    return password.ToString();
   }
 }
