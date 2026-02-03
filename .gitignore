@@ -5,6 +5,7 @@
 
 # Custom
 .DS_Store
+nupkg/
 
 # User-specific files
 *.rsuser
