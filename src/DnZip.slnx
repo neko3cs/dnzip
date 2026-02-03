@@ -5,4 +5,5 @@
     <Platform Name="x86" />
   </Configurations>
   <Project Path="./DnZip/DnZip.csproj" />
+  <Project Path="./DnZip.Tests/DnZip.Tests.csproj" />
 </Solution>
