@@ -4,7 +4,8 @@ using System.Threading.Tasks;
 using Sharprompt;
 using ConsoleAppFramework;
 using System.Text;
-using Ionic.Zip;
+using ICSharpCode.SharpZipLib.Zip;
+using ICSharpCode.SharpZipLib.Core;
 
 namespace DnZip
 {
@@ -17,7 +18,6 @@ namespace DnZip
             Encoding.RegisterProvider(CodePagesEncodingProvider.Instance);
             await ConsoleApp.RunAsync(args, Compress);
         }
-
 
         public static int Compress(
           string archiveFilePath,
@@ -74,17 +74,30 @@ namespace DnZip
                   string password
               )
         {
-            using var zip = new ZipFile(Encoding.GetEncoding("Shift_JIS"))
+            using var fsOut = File.Create(archiveFile.FullName);
+            // Shift_JIS エンコーディングを設定
+            var encoding = Encoding.GetEncoding("Shift_JIS");
+            
+            using var zipStream = new ZipOutputStream(fsOut, encoding.CodePage)
             {
-                CompressionLevel = Ionic.Zlib.CompressionLevel.BestCompression
+                IsStreamOwner = true
             };
-            if (!string.IsNullOrEmpty(password)) zip.Password = password;
-            AddEntry(zip, sourceDirectory, sourceDirectory, recursePaths);
-            zip.Save(archiveFile.FullName);
+
+            if (!string.IsNullOrEmpty(password))
+            {
+                zipStream.Password = password;
+            }
+
+            zipStream.SetLevel(9); // BestCompression 相当
+
+            AddEntry(zipStream, sourceDirectory, sourceDirectory, recursePaths);
+
+            zipStream.Finish();
+            zipStream.Close();
         }
 
         private static void AddEntry(
-            ZipFile zip,
+            ZipOutputStream zipStream,
             DirectoryInfo root,
             DirectoryInfo target,
             bool recursePaths
@@ -93,17 +106,46 @@ namespace DnZip
             foreach (var file in target.GetFiles())
             {
                 var entryPath = Path.GetRelativePath(root.FullName, file.FullName);
-                zip.AddFile(file.FullName, Path.GetDirectoryName(entryPath));
+                // Windows との互換性のためにパス区切りを / に統一
+                entryPath = ZipEntry.CleanName(entryPath);
+
+                var newEntry = new ZipEntry(entryPath)
+                {
+                    DateTime = file.LastWriteTime,
+                    Size = file.Length
+                };
+
+                zipStream.PutNextEntry(newEntry);
+
+                var buffer = new byte[4096];
+                using var fsIn = File.OpenRead(file.FullName);
+                StreamUtils.Copy(fsIn, zipStream, buffer);
+                zipStream.CloseEntry();
             }
 
             if (!recursePaths) return;
 
             foreach (var subDir in target.GetDirectories())
             {
-                if (subDir.GetFiles().Length == 0)
-                    zip.AddDirectory(subDir.FullName, subDir.Name);
+                var entryPath = Path.GetRelativePath(root.FullName, subDir.FullName);
+                entryPath = ZipEntry.CleanName(entryPath);
 
-                AddEntry(zip, root, subDir, recursePaths);
+                // 空のディレクトリ、またはディレクトリ自体のエントリを作成する場合
+                // SharpZipLib では末尾に / を付けることでディレクトリとして扱う
+                if (!entryPath.EndsWith("/"))
+                {
+                    entryPath += "/";
+                }
+
+                var dirEntry = new ZipEntry(entryPath)
+                {
+                    DateTime = subDir.LastWriteTime,
+                    Size = 0
+                };
+                zipStream.PutNextEntry(dirEntry);
+                zipStream.CloseEntry();
+
+                AddEntry(zipStream, root, subDir, recursePaths);
             }
         }
     }
