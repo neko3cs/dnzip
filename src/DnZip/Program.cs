@@ -13,10 +13,13 @@ namespace DnZip
     // HACK: --no-dir-entries(-D) に対応
     public class Program
     {
+        private static Func<string[], Task> _consoleAppRunner = RunConsoleAppAsync;
+        private static Func<string, string> _passwordReader = message => Prompt.Password(message);
+
         static async Task Main(string[] args)
         {
             Encoding.RegisterProvider(CodePagesEncodingProvider.Instance);
-            await ConsoleApp.RunAsync(args, Compress);
+            await _consoleAppRunner(args);
         }
 
         public static int Compress(
@@ -58,8 +61,8 @@ namespace DnZip
         public static bool TryGetPasswordFromConsole(out string password)
         {
             password = string.Empty;
-            var pw1 = Prompt.Password("Enter password: ");
-            var pw2 = Prompt.Password("Verify password: ");
+            var pw1 = _passwordReader("Enter password: ");
+            var pw2 = _passwordReader("Verify password: ");
 
             if (!pw1.Equals(pw2)) return false;
 
@@ -68,20 +71,17 @@ namespace DnZip
         }
 
         public static void CreateArchive(
-                  FileInfo archiveFile,
-                  DirectoryInfo sourceDirectory,
-                  bool recursePaths,
-                  string password
-              )
+          FileInfo archiveFile,
+          DirectoryInfo sourceDirectory,
+          bool recursePaths,
+          string password
+        )
         {
             using var fsOut = File.Create(archiveFile.FullName);
             // Shift_JIS エンコーディングを設定
             var encoding = Encoding.GetEncoding("Shift_JIS");
-            
-            using var zipStream = new ZipOutputStream(fsOut, encoding.CodePage)
-            {
-                IsStreamOwner = true
-            };
+
+            using var zipStream = new ZipOutputStream(fsOut, encoding.CodePage);
 
             if (!string.IsNullOrEmpty(password))
             {
@@ -96,11 +96,32 @@ namespace DnZip
             zipStream.Close();
         }
 
+        internal static void SetConsoleAppRunner(Func<string[], Task> consoleAppRunner)
+        {
+            _consoleAppRunner = consoleAppRunner;
+        }
+
+        internal static void SetPasswordReader(Func<string, string> passwordReader)
+        {
+            _passwordReader = passwordReader;
+        }
+
+        internal static void ResetTestHooks()
+        {
+            _consoleAppRunner = RunConsoleAppAsync;
+            _passwordReader = message => Prompt.Password(message);
+        }
+
+        private static Task RunConsoleAppAsync(string[] args)
+        {
+            return ConsoleApp.RunAsync(args, Compress);
+        }
+
         private static void AddEntry(
-            ZipOutputStream zipStream,
-            DirectoryInfo root,
-            DirectoryInfo target,
-            bool recursePaths
+          ZipOutputStream zipStream,
+          DirectoryInfo root,
+          DirectoryInfo target,
+          bool recursePaths
         )
         {
             foreach (var file in target.GetFiles())
