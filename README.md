@@ -6,6 +6,8 @@ It is intended as a simple alternative to the default Windows ZIP workflow, espe
 
 Package: [DnZip on NuGet](https://www.nuget.org/packages/DnZip)
 
+DnZip is distributed as a .NET global/local tool package.
+
 ## Features
 
 - Create a ZIP archive from one or more files and directories
@@ -20,6 +22,13 @@ You can install DnZip as a .NET tool:
 
 ```sh
 dotnet tool install --global DnZip
+```
+
+You can also install it locally for a specific repository:
+
+```sh
+dotnet new tool-manifest
+dotnet tool install DnZip
 ```
 
 If you want to update an existing installation:

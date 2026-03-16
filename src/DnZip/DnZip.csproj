@@ -6,12 +6,13 @@
     <Nullable>enable</Nullable>
 
     <PackageId>DnZip</PackageId>
+    <PackageReadmeFile>README.md</PackageReadmeFile>
     <PackageTags>Archive;ZIP;</PackageTags>
     <PackageProjectUrl>https://github.com/neko3cs/dn-zip</PackageProjectUrl>
     <PackageLicenseExpression>MIT</PackageLicenseExpression>
     <RepositoryType>git</RepositoryType>
     <RepositoryUrl>https://github.com/neko3cs/dn-zip.git</RepositoryUrl>
-    <Version>2.1.0</Version>
+    <Version>3.0.0</Version>
 
     <Authors>neko3cs</Authors>
     <PackAsTool>true</PackAsTool>
@@ -20,6 +21,7 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <None Include="..\..\README.md" Pack="true" PackagePath="\" />
     <PackageReference Include="ConsoleAppFramework" Version="5.7.13">
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
       <PrivateAssets>all</PrivateAssets>
