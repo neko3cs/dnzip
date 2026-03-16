@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using System.IO;
 
 namespace DnZip
@@ -6,7 +7,7 @@ namespace DnZip
     {
         void CreateArchive(
           FileInfo archiveFile,
-          DirectoryInfo sourceDirectory,
+          IReadOnlyList<ArchiveSource> sources,
           bool recursePaths,
           string password
         );

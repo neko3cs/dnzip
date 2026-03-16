@@ -162,8 +162,7 @@ Encoding.RegisterProvider(CodePagesEncodingProvider.Instance);
 ## Agent rules and best practices
 
 1. Preserve 2-space indentation.
-2. Do not remove these existing HACK comments unless the corresponding feature is actually implemented:
-   - `HACK: 複数ファイル指定に対応`
+2. Do not remove this existing HACK comment unless the corresponding feature is actually implemented:
    - `HACK: --no-dir-entries(-D) に対応`
 3. Keep `Program` thin; prefer extracting behavior into classes with explicit dependencies.
 4. If a dependency needs to be faked in tests, introduce an interface and inject it rather than adding static test hooks.

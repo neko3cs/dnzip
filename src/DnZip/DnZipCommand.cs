@@ -1,5 +1,7 @@
 using System;
+using System.Collections.Generic;
 using System.IO;
+using ICSharpCode.SharpZipLib.Zip;
 
 namespace DnZip
 {
@@ -9,18 +11,17 @@ namespace DnZip
         private readonly IArchiveService _archiveService = archiveService;
 
         public int Compress(
-              string archiveFilePath,
-              string sourceDirectoryPath,
-              bool recurse = false,
-              bool encrypt = false)
+          string archiveFilePath,
+          string[] sourcePaths,
+          bool recurse = false,
+          bool encrypt = false)
         {
             if (string.IsNullOrEmpty(archiveFilePath)) return 1;
-            if (string.IsNullOrEmpty(sourceDirectoryPath)) return 1;
+            if (sourcePaths.Length == 0) return 1;
 
-            var sourceDirectory = new DirectoryInfo(sourceDirectoryPath);
-            if (!sourceDirectory.Exists)
+            var sources = ResolveSources(sourcePaths);
+            if (sources is null)
             {
-                Console.WriteLine("Error: Source Directory path not found.");
                 return 1;
             }
 
@@ -36,7 +37,7 @@ namespace DnZip
 
             try
             {
-                _archiveService.CreateArchive(new FileInfo(archiveFilePath), sourceDirectory, recurse, password);
+                _archiveService.CreateArchive(new FileInfo(archiveFilePath), sources, recurse, password);
             }
             catch (Exception e)
             {
@@ -58,6 +59,50 @@ namespace DnZip
 
             password = pw1;
             return true;
+        }
+
+        private static List<ArchiveSource>? ResolveSources(string[] sourcePaths)
+        {
+            var sources = new List<ArchiveSource>(sourcePaths.Length);
+
+            foreach (var sourcePath in sourcePaths)
+            {
+                if (string.IsNullOrEmpty(sourcePath))
+                {
+                    Console.WriteLine("Error: Source path not found.");
+                    return null;
+                }
+
+                if (Directory.Exists(sourcePath))
+                {
+                    var sourceDirectory = new DirectoryInfo(sourcePath);
+                    sources.Add(new ArchiveSource(sourceDirectory, BuildEntryPath(sourceDirectory, sourcePath)));
+                    continue;
+                }
+
+                if (File.Exists(sourcePath))
+                {
+                    var sourceFile = new FileInfo(sourcePath);
+                    sources.Add(new ArchiveSource(sourceFile, BuildEntryPath(sourceFile, sourcePath)));
+                    continue;
+                }
+
+                Console.WriteLine($"Error: Source path not found: {sourcePath}");
+                return null;
+            }
+
+            return sources;
+        }
+
+        private static string BuildEntryPath(FileSystemInfo source, string sourcePath)
+        {
+            if (Path.IsPathRooted(sourcePath))
+            {
+                return ZipEntry.CleanName(source.Name);
+            }
+
+            var trimmedPath = Path.TrimEndingDirectorySeparator(sourcePath);
+            return ZipEntry.CleanName(trimmedPath);
         }
     }
 }
