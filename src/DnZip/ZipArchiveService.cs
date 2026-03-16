@@ -12,7 +12,8 @@ namespace DnZip
           FileInfo archiveFile,
           IReadOnlyList<ArchiveSource> sources,
           bool recursePaths,
-          string password
+          string password,
+          bool noDirEntries
         )
         {
             using var fsOut = File.Create(archiveFile.FullName);
@@ -37,7 +38,7 @@ namespace DnZip
 
                 if (source.Source is DirectoryInfo directory)
                 {
-                    AddDirectoryEntry(zipStream, directory, source.EntryPath, recursePaths);
+                    AddDirectoryEntry(zipStream, directory, source.EntryPath, recursePaths, noDirEntries);
                 }
             }
 
@@ -49,7 +50,8 @@ namespace DnZip
           ZipOutputStream zipStream,
           DirectoryInfo directory,
           string entryPath,
-          bool recursePaths
+          bool recursePaths,
+          bool noDirEntries
         )
         {
             foreach (var file in directory.GetFiles())
@@ -60,12 +62,15 @@ namespace DnZip
 
             if (!recursePaths) return;
 
-            AddDirectoryMarkerEntry(zipStream, directory, entryPath);
+            if (!noDirEntries)
+            {
+                AddDirectoryMarkerEntry(zipStream, directory, entryPath);
+            }
 
             foreach (var subDirectory in directory.GetDirectories())
             {
                 var subDirectoryEntryPath = ZipEntry.CleanName(Path.Combine(entryPath, subDirectory.Name));
-                AddDirectoryEntry(zipStream, subDirectory, subDirectoryEntryPath, recursePaths);
+                AddDirectoryEntry(zipStream, subDirectory, subDirectoryEntryPath, recursePaths, noDirEntries);
             }
         }
 

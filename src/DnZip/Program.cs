@@ -4,7 +4,6 @@ using ConsoleAppFramework;
 
 namespace DnZip
 {
-    // HACK: --no-dir-entries(-D) に対応
     public class Program
     {
         static async Task Main(string[] args)

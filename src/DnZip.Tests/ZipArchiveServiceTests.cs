@@ -25,7 +25,8 @@ namespace DnZip.Tests
               new FileInfo(archivePath),
               [new ArchiveSource(sourceDirectory, sourceDirectory.Name)],
               recursePaths: false,
-              password: string.Empty);
+              password: string.Empty,
+              noDirEntries: false);
 
             File.Exists(archivePath).ShouldBeTrue();
             var entry = ZipArchiveReader.GetEntries(archivePath).Single();
@@ -49,7 +50,8 @@ namespace DnZip.Tests
               new FileInfo(archivePath),
               [new ArchiveSource(sourceDirectory, sourceDirectory.Name)],
               recursePaths: false,
-              password: string.Empty);
+              password: string.Empty,
+              noDirEntries: false);
 
             ZipArchiveReader.GetEntries(archivePath).Select(entry => entry.Name)
               .ShouldBe(["source_flat/root.txt"]);
@@ -71,7 +73,8 @@ namespace DnZip.Tests
               new FileInfo(archivePath),
               [new ArchiveSource(sourceDirectory, sourceDirectory.Name)],
               recursePaths: true,
-              password: string.Empty);
+              password: string.Empty,
+              noDirEntries: false);
 
             var entries = ZipArchiveReader.GetEntries(archivePath).OrderBy(entry => entry.Name).ToArray();
             entries.Select(entry => entry.Name)
@@ -90,6 +93,45 @@ namespace DnZip.Tests
         }
 
         [Fact]
+        public void CreateArchive_ShouldOmitDirectoryEntries_WhenNoDirEntriesIsTrue()
+        {
+            var sourceDirectory = _workspace.CreateSourceDirectory("source_recurse");
+            var subDirectory = Directory.CreateDirectory(Path.Combine(sourceDirectory.FullName, "subdir"));
+            File.WriteAllText(Path.Combine(sourceDirectory.FullName, "root.txt"), "root");
+            File.WriteAllText(Path.Combine(subDirectory.FullName, "sub.txt"), "sub");
+            var archivePath = Path.Combine(_workspace.RootPath, "output_no_dir_entries.zip");
+
+            _archiveService.CreateArchive(
+              new FileInfo(archivePath),
+              [new ArchiveSource(sourceDirectory, sourceDirectory.Name)],
+              recursePaths: true,
+              password: string.Empty,
+              noDirEntries: true);
+
+            var entries = ZipArchiveReader.GetEntries(archivePath).OrderBy(entry => entry.Name).ToArray();
+            entries.Select(entry => entry.Name)
+              .ShouldBe(["source_recurse/root.txt", "source_recurse/subdir/sub.txt"]);
+            entries.Any(entry => entry.IsDirectory).ShouldBeFalse();
+        }
+
+        [Fact]
+        public void CreateArchive_ShouldSkipEmptyDirectories_WhenNoDirEntriesIsTrue()
+        {
+            var sourceDirectory = _workspace.CreateSourceDirectory("source_empty");
+            Directory.CreateDirectory(Path.Combine(sourceDirectory.FullName, "empty"));
+            var archivePath = Path.Combine(_workspace.RootPath, "empty_no_dir_entries.zip");
+
+            _archiveService.CreateArchive(
+              new FileInfo(archivePath),
+              [new ArchiveSource(sourceDirectory, sourceDirectory.Name)],
+              recursePaths: true,
+              password: string.Empty,
+              noDirEntries: true);
+
+            ZipArchiveReader.GetEntries(archivePath).ShouldBeEmpty();
+        }
+
+        [Fact]
         public void CreateArchive_ShouldIncludeMultipleFilesAndDirectories()
         {
             var sourceDirectory = _workspace.CreateSourceDirectory("data");
@@ -102,7 +144,8 @@ namespace DnZip.Tests
               new FileInfo(archivePath),
               [new ArchiveSource(sourceDirectory, sourceDirectory.Name), new ArchiveSource(new FileInfo(singleFilePath), Path.GetFileName(singleFilePath))],
               recursePaths: true,
-              password: string.Empty);
+              password: string.Empty,
+              noDirEntries: false);
 
             var entries = ZipArchiveReader.GetEntries(archivePath).OrderBy(entry => entry.Name).ToArray();
             entries.Select(entry => entry.Name).ShouldBe(["data/", "data/inside.txt", "single.txt"]);
@@ -121,7 +164,8 @@ namespace DnZip.Tests
               new FileInfo(archivePath),
               [new ArchiveSource(sourceDirectory, sourceDirectory.Name)],
               recursePaths: false,
-              password: "p@ssw0rd");
+              password: "p@ssw0rd",
+              noDirEntries: false);
 
             var entry = ZipArchiveReader.GetEntries(archivePath, "p@ssw0rd").Single();
             entry.Name.ShouldBe("source_encrypted/secret.txt");
@@ -140,7 +184,8 @@ namespace DnZip.Tests
                 new FileInfo(archivePath),
                 [new ArchiveSource(sourceDirectory, sourceDirectory.Name)],
                 recursePaths: false,
-                password: string.Empty));
+                password: string.Empty,
+                noDirEntries: false));
         }
 
         public void Dispose()
