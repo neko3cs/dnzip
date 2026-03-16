@@ -397,3 +397,6 @@ Temporary Items
 *.icloud
 
 # End of https://www.toptal.com/developers/gitignore/api/dotnetcore,macos
+
+# Stryker.NET mutation testing reports
+StrykerOutput/
