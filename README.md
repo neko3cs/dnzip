@@ -1,6 +1,6 @@
 # DnZip
 
-DnZip is a .NET command-line tool for creating ZIP archives from a directory, with optional recursive directory inclusion and password-based encryption.
+DnZip is a .NET command-line tool for creating ZIP archives from one or more files and directories, with optional recursive directory inclusion and password-based encryption.
 
 It is intended as a simple alternative to the default Windows ZIP workflow, especially when you need encrypted archives from the command line.
 
@@ -8,7 +8,7 @@ Package: [DnZip on NuGet](https://www.nuget.org/packages/DnZip)
 
 ## Features
 
-- Create a ZIP archive from a source directory
+- Create a ZIP archive from one or more files and directories
 - Include subdirectories recursively
 - Encrypt the archive with a password prompt
 - Use Shift_JIS entry encoding for better compatibility with common Windows archive tools
@@ -32,15 +32,15 @@ dotnet tool update --global DnZip
 ### Syntax
 
 ```sh
-dnzip [options] <archiveFilePath> <sourceDirectoryPath>
+dnzip [options] <archiveFilePath> <sourcePath> [sourcePath...]
 ```
 
 ### Arguments
 
-| Argument              | Description                              |
-| --------------------- | ---------------------------------------- |
-| `archiveFilePath`     | Output path of the ZIP archive to create |
-| `sourceDirectoryPath` | Directory to archive                     |
+| Argument          | Description                                 |
+| ----------------- | ------------------------------------------- |
+| `archiveFilePath` | Output path of the ZIP archive to create    |
+| `sourcePath`      | One or more files or directories to archive |
 
 ### Options
 
@@ -75,9 +75,15 @@ Create an encrypted ZIP file including subdirectories:
 dnzip output.zip ./data --recurse --encrypt
 ```
 
+Create a ZIP file from multiple inputs:
+
+```sh
+dnzip output.zip ./docs ./src/appsettings.json ./assets --recurse
+```
+
 ## Behavior
 
 - Returns exit code `0` on success
 - Returns exit code `1` on failure
-- Prints an error message if the source directory does not exist
+- Prints an error message if any source path does not exist
 - Prompts twice for password confirmation when `--encrypt` is used

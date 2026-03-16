@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using System.IO;
 using System.Text;
 using ICSharpCode.SharpZipLib.Core;
@@ -9,7 +10,7 @@ namespace DnZip
     {
         public void CreateArchive(
           FileInfo archiveFile,
-          DirectoryInfo sourceDirectory,
+          IReadOnlyList<ArchiveSource> sources,
           bool recursePaths,
           string password
         )
@@ -26,61 +27,75 @@ namespace DnZip
 
             zipStream.SetLevel(9);
 
-            AddEntry(zipStream, sourceDirectory, sourceDirectory, recursePaths);
+            foreach (var source in sources)
+            {
+                if (source.Source is FileInfo file)
+                {
+                    AddFileEntry(zipStream, file, source.EntryPath);
+                    continue;
+                }
+
+                if (source.Source is DirectoryInfo directory)
+                {
+                    AddDirectoryEntry(zipStream, directory, source.EntryPath, recursePaths);
+                }
+            }
 
             zipStream.Finish();
             zipStream.Close();
         }
 
-        private static void AddEntry(
+        private static void AddDirectoryEntry(
           ZipOutputStream zipStream,
-          DirectoryInfo root,
-          DirectoryInfo target,
+          DirectoryInfo directory,
+          string entryPath,
           bool recursePaths
         )
         {
-            foreach (var file in target.GetFiles())
+            foreach (var file in directory.GetFiles())
             {
-                var entryPath = Path.GetRelativePath(root.FullName, file.FullName);
-                entryPath = ZipEntry.CleanName(entryPath);
-
-                var newEntry = new ZipEntry(entryPath)
-                {
-                    DateTime = file.LastWriteTime,
-                    Size = file.Length
-                };
-
-                zipStream.PutNextEntry(newEntry);
-
-                var buffer = new byte[4096];
-                using var fsIn = File.OpenRead(file.FullName);
-                StreamUtils.Copy(fsIn, zipStream, buffer);
-                zipStream.CloseEntry();
+                var fileEntryPath = ZipEntry.CleanName(Path.Combine(entryPath, file.Name));
+                AddFileEntry(zipStream, file, fileEntryPath);
             }
 
             if (!recursePaths) return;
 
-            foreach (var subDir in target.GetDirectories())
+            AddDirectoryMarkerEntry(zipStream, directory, entryPath);
+
+            foreach (var subDirectory in directory.GetDirectories())
             {
-                var entryPath = Path.GetRelativePath(root.FullName, subDir.FullName);
-                entryPath = ZipEntry.CleanName(entryPath);
-
-                if (!entryPath.EndsWith("/"))
-                {
-                    entryPath += "/";
-                }
-
-                var dirEntry = new ZipEntry(entryPath)
-                {
-                    DateTime = subDir.LastWriteTime,
-                    Size = 0
-                };
-
-                zipStream.PutNextEntry(dirEntry);
-                zipStream.CloseEntry();
-
-                AddEntry(zipStream, root, subDir, recursePaths);
+                var subDirectoryEntryPath = ZipEntry.CleanName(Path.Combine(entryPath, subDirectory.Name));
+                AddDirectoryEntry(zipStream, subDirectory, subDirectoryEntryPath, recursePaths);
             }
+        }
+
+        private static void AddFileEntry(ZipOutputStream zipStream, FileInfo file, string entryPath)
+        {
+            var newEntry = new ZipEntry(entryPath)
+            {
+                DateTime = file.LastWriteTime,
+                Size = file.Length
+            };
+
+            zipStream.PutNextEntry(newEntry);
+
+            var buffer = new byte[4096];
+            using var fsIn = File.OpenRead(file.FullName);
+            StreamUtils.Copy(fsIn, zipStream, buffer);
+            zipStream.CloseEntry();
+        }
+
+        private static void AddDirectoryMarkerEntry(ZipOutputStream zipStream, DirectoryInfo directory, string entryPath)
+        {
+            var directoryEntryPath = entryPath.EndsWith("/") ? entryPath : $"{entryPath}/";
+            var dirEntry = new ZipEntry(directoryEntryPath)
+            {
+                DateTime = directory.LastWriteTime,
+                Size = 0
+            };
+
+            zipStream.PutNextEntry(dirEntry);
+            zipStream.CloseEntry();
         }
     }
 }

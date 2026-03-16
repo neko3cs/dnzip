@@ -1,5 +1,6 @@
 using System;
 using System.IO;
+using System.Linq;
 using DnZip;
 using Shouldly;
 using Xunit;
@@ -16,28 +17,28 @@ namespace DnZip.Tests
             var sourceDirectory = _workspace.CreateSourceDirectory("source");
             var command = CreateCommand();
 
-            var result = command.Compress(string.Empty, sourceDirectory.FullName);
+            var result = command.Compress(string.Empty, [sourceDirectory.FullName]);
 
             result.ShouldBe(1);
         }
 
         [Fact]
-        public void Compress_ShouldReturnError_WhenSourceDirectoryPathIsEmpty()
+        public void Compress_ShouldReturnError_WhenSourcePathListIsEmpty()
         {
             var archivePath = Path.Combine(_workspace.RootPath, "output.zip");
             var command = CreateCommand();
 
-            var result = command.Compress(archivePath, string.Empty);
+            var result = command.Compress(archivePath, []);
 
             result.ShouldBe(1);
             File.Exists(archivePath).ShouldBeFalse();
         }
 
         [Fact]
-        public void Compress_ShouldReturnError_WhenSourceDirectoryDoesNotExist()
+        public void Compress_ShouldReturnError_WhenSourcePathDoesNotExist()
         {
             var archivePath = Path.Combine(_workspace.RootPath, "output.zip");
-            var missingDirectory = Path.Combine(_workspace.RootPath, "missing");
+            var missingPath = Path.Combine(_workspace.RootPath, "missing");
             var command = CreateCommand();
 
             using var consoleOut = new StringWriter();
@@ -46,11 +47,11 @@ namespace DnZip.Tests
 
             try
             {
-                var result = command.Compress(archivePath, missingDirectory);
+                var result = command.Compress(archivePath, [missingPath]);
 
                 result.ShouldBe(1);
                 File.Exists(archivePath).ShouldBeFalse();
-                consoleOut.ToString().ShouldContain("Error: Source Directory path not found.");
+                consoleOut.ToString().ShouldContain($"Error: Source path not found: {missingPath}");
             }
             finally
             {
@@ -66,16 +67,37 @@ namespace DnZip.Tests
             var archiveService = new FakeArchiveService();
             var command = CreateCommand(archiveService: archiveService);
 
-            var result = command.Compress(archivePath, sourceDirectory.FullName, recurse: true);
+            var result = command.Compress(archivePath, [sourceDirectory.FullName], recurse: true);
 
             result.ShouldBe(0);
             archiveService.CallCount.ShouldBe(1);
             archiveService.ArchiveFile.ShouldNotBeNull();
             archiveService.ArchiveFile!.FullName.ShouldBe(new FileInfo(archivePath).FullName);
-            archiveService.SourceDirectory.ShouldNotBeNull();
-            archiveService.SourceDirectory!.FullName.ShouldBe(sourceDirectory.FullName);
+            archiveService.Sources.ShouldNotBeNull();
+            archiveService.Sources!.Count.ShouldBe(1);
+            archiveService.Sources[0].Source.ShouldBeOfType<DirectoryInfo>();
+            archiveService.Sources[0].Source.FullName.ShouldBe(sourceDirectory.FullName);
+            archiveService.Sources[0].EntryPath.ShouldBe(sourceDirectory.Name);
             archiveService.RecursePaths.ShouldBeTrue();
             archiveService.Password.ShouldBeEmpty();
+        }
+
+        [Fact]
+        public void Compress_ShouldDelegateAllSourcePaths_WhenMultipleInputsAreProvided()
+        {
+            var sourceDirectory = _workspace.CreateSourceDirectory("source");
+            var sourceFile = Path.Combine(_workspace.RootPath, "single.txt");
+            File.WriteAllText(sourceFile, "single");
+            var archivePath = Path.Combine(_workspace.RootPath, "multi.zip");
+            var archiveService = new FakeArchiveService();
+            var command = CreateCommand(archiveService: archiveService);
+
+            var result = command.Compress(archivePath, [sourceDirectory.FullName, sourceFile], recurse: true);
+
+            result.ShouldBe(0);
+            archiveService.Sources.ShouldNotBeNull();
+            archiveService.Sources!.Select(source => source.EntryPath)
+              .ShouldBe([sourceDirectory.Name, Path.GetFileName(sourceFile)]);
         }
 
         [Fact]
@@ -87,7 +109,7 @@ namespace DnZip.Tests
             var passwordPrompt = new FakePasswordPrompt("secret", "secret");
             var command = CreateCommand(passwordPrompt, archiveService);
 
-            var result = command.Compress(archivePath, sourceDirectory.FullName, encrypt: true);
+            var result = command.Compress(archivePath, [sourceDirectory.FullName], encrypt: true);
 
             result.ShouldBe(0);
             archiveService.CallCount.ShouldBe(1);
@@ -108,7 +130,7 @@ namespace DnZip.Tests
 
             try
             {
-                var result = command.Compress(archivePath, sourceDirectory.FullName, encrypt: true);
+                var result = command.Compress(archivePath, [sourceDirectory.FullName], encrypt: true);
 
                 result.ShouldBe(1);
                 consoleOut.ToString().ShouldContain("Error: Password verification failed.");
@@ -136,7 +158,7 @@ namespace DnZip.Tests
 
             try
             {
-                var result = command.Compress(archivePath, sourceDirectory.FullName);
+                var result = command.Compress(archivePath, [sourceDirectory.FullName]);
 
                 result.ShouldBe(1);
                 consoleOut.ToString().ShouldContain(nameof(DirectoryNotFoundException));
