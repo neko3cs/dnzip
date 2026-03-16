@@ -11,6 +11,7 @@ Package: [DnZip on NuGet](https://www.nuget.org/packages/DnZip)
 - Create a ZIP archive from one or more files and directories
 - Include subdirectories recursively
 - Encrypt the archive with a password prompt
+- Omit directory entries like `zip -D`
 - Use Shift_JIS entry encoding for better compatibility with common Windows archive tools
 
 ## Installation
@@ -37,17 +38,18 @@ dnzip [options] <archiveFilePath> <sourcePath> [sourcePath...]
 
 ### Arguments
 
-| Argument          | Description                                 |
-| ----------------- | ------------------------------------------- |
-| `archiveFilePath` | Output path of the ZIP archive to create    |
-| `sourcePath`      | One or more files or directories to archive |
+| Argument | Description |
+| -- | -- |
+| `archiveFilePath` | Output path of the ZIP archive to create |
+| `sourcePath` | One or more files or directories to archive |
 
 ### Options
 
-| Option            | Description                                               |
-| ----------------- | --------------------------------------------------------- |
-| `-r`, `--recurse` | Include subdirectories recursively                        |
+| Option | Description |
+| -- | -- |
+| `-r`, `--recurse` | Include subdirectories recursively |
 | `-e`, `--encrypt` | Prompt for a password and create an encrypted ZIP archive |
+| `-D`, `--no-dir-entries` | Do not create directory entries |
 
 ### Examples
 
@@ -79,6 +81,12 @@ Create a ZIP file from multiple inputs:
 
 ```sh
 dnzip output.zip ./docs ./src/appsettings.json ./assets --recurse
+```
+
+Create a ZIP file without directory entries, like `zip -D`:
+
+```sh
+dnzip output.zip ./data --recurse --no-dir-entries
 ```
 
 ## Behavior

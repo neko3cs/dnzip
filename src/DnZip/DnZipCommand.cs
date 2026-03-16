@@ -10,11 +10,20 @@ namespace DnZip
         private readonly IPasswordPrompt _passwordPrompt = passwordPrompt;
         private readonly IArchiveService _archiveService = archiveService;
 
+        /// <summary>
+        /// Create a ZIP archive from one or more files or directories.
+        /// </summary>
+        /// <param name="archiveFilePath">Output path of the ZIP archive to create.</param>
+        /// <param name="sourcePaths">One or more files or directories to archive.</param>
+        /// <param name="recurse">-r, Include subdirectories recursively.</param>
+        /// <param name="encrypt">-e, Prompt for a password and create an encrypted ZIP archive.</param>
+        /// <param name="noDirEntries">-D, Do not create entries for directories.</param>
         public int Compress(
           string archiveFilePath,
           string[] sourcePaths,
           bool recurse = false,
-          bool encrypt = false)
+          bool encrypt = false,
+          bool noDirEntries = false)
         {
             if (string.IsNullOrEmpty(archiveFilePath)) return 1;
             if (sourcePaths.Length == 0) return 1;
@@ -37,7 +46,7 @@ namespace DnZip
 
             try
             {
-                _archiveService.CreateArchive(new FileInfo(archiveFilePath), sources, recurse, password);
+                _archiveService.CreateArchive(new FileInfo(archiveFilePath), sources, recurse, password, noDirEntries);
             }
             catch (Exception e)
             {

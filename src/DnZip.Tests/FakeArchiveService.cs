@@ -11,16 +11,23 @@ namespace DnZip.Tests
         public IReadOnlyList<ArchiveSource>? Sources { get; private set; }
         public bool RecursePaths { get; private set; }
         public string Password { get; private set; } = string.Empty;
+        public bool NoDirEntries { get; private set; }
         public int CallCount { get; private set; }
         public Exception? ExceptionToThrow { get; set; }
 
-        public void CreateArchive(FileInfo archiveFile, IReadOnlyList<ArchiveSource> sources, bool recursePaths, string password)
+        public void CreateArchive(
+          FileInfo archiveFile,
+          IReadOnlyList<ArchiveSource> sources,
+          bool recursePaths,
+          string password,
+          bool noDirEntries)
         {
             CallCount++;
             ArchiveFile = archiveFile;
             Sources = sources;
             RecursePaths = recursePaths;
             Password = password;
+            NoDirEntries = noDirEntries;
 
             if (ExceptionToThrow is not null)
             {

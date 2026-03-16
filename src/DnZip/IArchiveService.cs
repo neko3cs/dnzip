@@ -9,7 +9,8 @@ namespace DnZip
           FileInfo archiveFile,
           IReadOnlyList<ArchiveSource> sources,
           bool recursePaths,
-          string password
+          string password,
+          bool noDirEntries
         );
     }
 }

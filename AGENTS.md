@@ -2,7 +2,7 @@
 
 This document captures the current project-specific guidance for AI agents working on DnZip.
 
-DnZip is a .NET CLI tool for creating ZIP archives with optional encryption and recursive directory support. It is intended as a practical alternative to the default Windows archiver.
+DnZip is a .NET CLI tool for creating ZIP archives with optional encryption, recursive directory support, multiple input paths, and optional omission of directory entries.
 
 ## Build, run, format, and test commands
 
@@ -17,18 +17,19 @@ dotnet build src/DnZip/DnZip.csproj
 ### Run
 
 ```bash
-dotnet run --project src/DnZip/DnZip.csproj -- <archiveFilePath> <sourceDirectoryPath> [options]
+dotnet run --project src/DnZip/DnZip.csproj -- <archiveFilePath> <sourcePath> [sourcePath...] [options]
 ```
 
 Supported options map to `DnZipCommand.Compress` parameters:
 
-- `--recurse` or `-r`: include subdirectories recursively
-- `--encrypt` or `-e`: encrypt the archive and prompt for a password
+- `-r`, `--recurse`: include subdirectories recursively
+- `-e`, `--encrypt`: encrypt the archive and prompt for a password
+- `-D`, `--no-dir-entries`: do not create directory entries, similar to `zip -D`
 
 Example:
 
 ```bash
-dotnet run --project src/DnZip/DnZip.csproj -- output.zip ./data --recurse
+dotnet run --project src/DnZip/DnZip.csproj -- output.zip ./data ./assets --recurse
 ```
 
 ### Format
@@ -76,7 +77,8 @@ dotnet stryker --break-at 80
 ## Current code structure
 
 - `src/DnZip/Program.cs`: composition root only; registers encoding and starts `ConsoleAppFramework`
-- `src/DnZip/DnZipCommand.cs`: CLI command logic, validation, exit-code behavior, password confirmation
+- `src/DnZip/DnZipCommand.cs`: CLI command logic, validation, exit-code behavior, password confirmation, and source path resolution
+- `src/DnZip/ArchiveSource.cs`: resolved archive input with its final entry path
 - `src/DnZip/ZipArchiveService.cs`: ZIP archive creation and recursive entry writing
 - `src/DnZip/IPasswordPrompt.cs`: abstraction for password input
 - `src/DnZip/SharpromptPasswordPrompt.cs`: production implementation using `Sharprompt`
@@ -152,6 +154,7 @@ Encoding.RegisterProvider(CodePagesEncodingProvider.Instance);
 
 - The entry point remains `ConsoleApp.RunAsync(args, command.Compress)`
 - Command parameters become CLI arguments/options automatically
+- Short option aliases are defined via XML doc comments on command parameters
 
 ### Password prompting: Sharprompt
 
@@ -162,8 +165,7 @@ Encoding.RegisterProvider(CodePagesEncodingProvider.Instance);
 ## Agent rules and best practices
 
 1. Preserve 2-space indentation.
-2. Do not remove this existing HACK comment unless the corresponding feature is actually implemented:
-   - `HACK: --no-dir-entries(-D) に対応`
+2. Keep remaining HACK comments until the corresponding feature is actually implemented.
 3. Keep `Program` thin; prefer extracting behavior into classes with explicit dependencies.
 4. If a dependency needs to be faked in tests, introduce an interface and inject it rather than adding static test hooks.
 5. Keep tests focused per class and per responsibility.

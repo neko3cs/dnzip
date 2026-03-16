@@ -79,6 +79,7 @@ namespace DnZip.Tests
             archiveService.Sources[0].Source.FullName.ShouldBe(sourceDirectory.FullName);
             archiveService.Sources[0].EntryPath.ShouldBe(sourceDirectory.Name);
             archiveService.RecursePaths.ShouldBeTrue();
+            archiveService.NoDirEntries.ShouldBeFalse();
             archiveService.Password.ShouldBeEmpty();
         }
 
@@ -115,6 +116,21 @@ namespace DnZip.Tests
             archiveService.CallCount.ShouldBe(1);
             archiveService.Password.ShouldBe("secret");
             passwordPrompt.Messages.ShouldBe(new[] { "Enter password: ", "Verify password: " });
+        }
+
+        [Fact]
+        public void Compress_ShouldPassNoDirEntriesToArchiveService_WhenOptionIsEnabled()
+        {
+            var sourceDirectory = _workspace.CreateSourceDirectory("source");
+            var archivePath = Path.Combine(_workspace.RootPath, "nodir.zip");
+            var archiveService = new FakeArchiveService();
+            var command = CreateCommand(archiveService: archiveService);
+
+            var result = command.Compress(archivePath, [sourceDirectory.FullName], recurse: true, noDirEntries: true);
+
+            result.ShouldBe(0);
+            archiveService.NoDirEntries.ShouldBeTrue();
+            archiveService.RecursePaths.ShouldBeTrue();
         }
 
         [Fact]
