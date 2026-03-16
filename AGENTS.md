@@ -1,156 +1,182 @@
-# エージェントガイドライン - DnZip
+# Agent Guidelines - DnZip
 
-このドキュメントは、DnZipプロジェクトで作業するAIエージェント向けの重要情報をまとめたものです。DnZipは、暗号化と再帰的なアーカイブをサポートし、Windows標準のアーカイバの代替として設計された .NETベースのCLIツールです。
+This document captures the current project-specific guidance for AI agents working on DnZip.
 
-## ビルド、テスト、およびリンターコマンド
+DnZip is a .NET CLI tool for creating ZIP archives with optional encryption and recursive directory support. It is intended as a practical alternative to the default Windows archiver.
 
-プロジェクトは標準の .NET CLIを使用します。メインプロジェクトは `src/DnZip/DnZip.csproj` にあります。
+## Build, run, format, and test commands
 
-### ビルド
+The main project is `src/DnZip/DnZip.csproj`.
 
-プロジェクトをビルドする場合：
+### Build
 
 ```bash
 dotnet build src/DnZip/DnZip.csproj
 ```
 
-### 実行
-
-開発中に引数を指定して実行する場合：
+### Run
 
 ```bash
-dotnet run --project src/DnZip/DnZip.csproj -- <archiveFilePath> <sourceDirectoryPath> [オプション]
+dotnet run --project src/DnZip/DnZip.csproj -- <archiveFilePath> <sourceDirectoryPath> [options]
 ```
 
-利用可能なオプション（`Compress` メソッドのパラメーターに対応）：
+Supported options map to `DnZipCommand.Compress` parameters:
 
-- `--recurse` または `-r`: ディレクトリ構造を再帰的にアーカイブします。
-- `--encrypt` または `-e`: アーカイブファイルを暗号化します（パスワードの入力が求められます）。
+- `--recurse` or `-r`: include subdirectories recursively
+- `--encrypt` or `-e`: encrypt the archive and prompt for a password
 
-例：
+Example:
 
 ```bash
 dotnet run --project src/DnZip/DnZip.csproj -- output.zip ./data --recurse
 ```
 
-### テスト
+### Format
 
-現在、このリポジトリにテストはありません。テストを追加する場合は、xUnitを使用し、`tests/` ディレクトリに配置してください。
-すべてのテストを実行する場合：
+Prefer formatting the solution, not only the main project:
 
 ```bash
+dotnet format src/DnZip.slnx
+```
+
+### Tests
+
+There is an xUnit test project at `src/DnZip.Tests/`.
+
+Always run test-related commands from `src/DnZip.Tests/` so generated artifacts stay near the test project instead of creating `TestResults/` at the repository root.
+
+Run all tests:
+
+```bash
+cd src/DnZip.Tests
 dotnet test
 ```
 
-特定のテストを実行する場合：
+Run coverage collection:
 
 ```bash
-dotnet test --filter "FullyQualifiedName=MyNamespace.MyTestClass.MyTestMethod"
+cd src/DnZip.Tests
+dotnet test --collect:"XPlat Code Coverage" --results-directory ./TestResults
 ```
 
-### リンター / フォーマット
-
-コードスタイルを維持するために、組み込みのdotnetフォーマッタを使用してください：
+Generate a coverage report if `reportgenerator` is available:
 
 ```bash
-dotnet format src/DnZip/DnZip.csproj
+cd src/DnZip.Tests
+reportgenerator -reports:"./TestResults/**/coverage.cobertura.xml" -targetdir:"./TestResults/CoverageReport" -reporttypes:"TextSummary;Html" -filefilters:"-*ConsoleAppFramework*"
 ```
 
----
+Run mutation tests if `dotnet-stryker` is available:
 
-## コードスタイルと規約
+```bash
+cd src/DnZip.Tests
+dotnet stryker --break-at 80
+```
 
-### 全般
+## Current code structure
 
-- **ターゲットフレームワーク**: .NET 9
-- **インデント**: スペース2つ（タブ禁止）。これはこのプロジェクトの厳格な要件です。
-- **改行コード**: LF（Unixスタイル）を推奨します。
-- **中括弧**: クラス、メソッド、制御構造においてAllmanスタイル（新しい行に中括弧を置く）を使用します。
+- `src/DnZip/Program.cs`: composition root only; registers encoding and starts `ConsoleAppFramework`
+- `src/DnZip/DnZipCommand.cs`: CLI command logic, validation, exit-code behavior, password confirmation
+- `src/DnZip/ZipArchiveService.cs`: ZIP archive creation and recursive entry writing
+- `src/DnZip/IPasswordPrompt.cs`: abstraction for password input
+- `src/DnZip/SharpromptPasswordPrompt.cs`: production implementation using `Sharprompt`
+- `src/DnZip/IArchiveService.cs`: abstraction for archive creation
 
-### 命名規則
+### Test structure
 
-- **クラス/インターフェイス/メソッド**: `PascalCase` (例: `Program`, `CreateArchive`)。
-- **パラメーター/ローカル変数**: `camelCase` (例: `archiveFilePath`, `zip`)。
-- **プライベートフィールド**: `_camelCase` (例: `_myField`)。
-- **名前空間**: `PascalCase` で、ディレクトリ構造に合わせます (例: `DnZip`)。
+Keep a strict **one file, one class** rule.
 
-### ファイル構造とインポート
+Examples:
 
-- インポート (`using`) はファイルの先頭に置きます。
-- 順序: `System` 名前空間を最初、次にサードパーティライブラリ、最後に内部名前空間の順にします。各グループ内はアルファベット順にソートします。
-- 名前空間の宣言はブロックスコープスタイルを使用します：
-  
-  ```csharp
-  namespace DnZip
-  {
-    public class Program { ... }
-  }
-  ```
+- `src/DnZip.Tests/DnZipCommandTests.cs`
+- `src/DnZip.Tests/ZipArchiveServiceTests.cs`
+- `src/DnZip.Tests/FakePasswordPrompt.cs`
+- `src/DnZip.Tests/FakeArchiveService.cs`
+- `src/DnZip.Tests/TestWorkspace.cs`
 
-### 型と機能
+Do not re-introduce a single large test file that mixes unrelated test classes or helper classes.
 
-- 最新のC#機能 (C# 13+) を使用します。
-- 右辺から型が明らかな場合は `var` を使用します (例: `var sourceDirectory = new DirectoryInfo(path);`)。
-- I/Oバウンドな操作には `async/await` を優先します。
-- 基本的な文字列検証には `string.IsNullOrEmpty()` を使用します。
+`Program` is intentionally thin and should generally not need direct tests.
 
-### エラー処理
+## Code style and conventions
 
-- CLIは成功時に `0`、失敗時に `1` を返すべきです。
-- `Main` やコマンドメソッドでのトップレベルの例外はキャッチし、コンソールにログ出力してください。
-- 「ファイルが見つからない」などの想定されるユーザーエラーに対して例外をスローするのは避け、明確なメッセージを表示して非ゼロの終了コードを返してください。
+### General
 
----
+- Target framework: `.NET 10`
+- Indentation: **2 spaces**, no tabs
+- Prefer LF line endings
+- Use Allman braces
+- Use block-scoped namespaces
 
-## 技術スタックとライブラリ
+### Naming
 
-### ZIP操作: DotNetZip (Ionic.Zip)
+- Classes, interfaces, methods: `PascalCase`
+- Parameters and locals: `camelCase`
+- Private fields: `_camelCase`
 
-- ZIP操作には `DotNetZip` を使用します。
-- **エンコーディング**: Windowsなどのさまざまな展開ツールとの互換性を確保するため、`ZipFile` を初期化する際は常に `Encoding.GetEncoding("Shift_JIS")` を使用してください。
-- **圧縮**: デフォルトで `CompressionLevel` は `BestCompression` に設定します。
+### Using directives
 
-### CLIフレームワーク: ConsoleAppFramework
+- Put `using` directives at the top of the file
+- Order groups as: `System.*`, third-party namespaces, then project namespaces
+- Sort each group alphabetically when practical
 
-- コマンドはメソッドとして定義されます (例: `Compress`)。
-- これらのメソッドのパラメーターは、自動的にCLIの引数/オプションになります。
-- エントリポイントは `ConsoleApp.RunAsync(args, Compress)` です。
+### Types and language features
 
-### 対話型プロンプト: Sharprompt
+- Prefer modern C# features when they improve clarity
+- Use `var` when the type is obvious from the right-hand side
+- Use `string.IsNullOrEmpty()` for basic string validation
 
-- パスワードなどの機密情報の入力に使用します。
-- 機密データには `Prompt.Password("...")` を使用してください。
+## Error handling and CLI behavior
 
----
+- Successful CLI execution should return `0`
+- Failures should return `1`
+- Expected user-facing failures should print a clear message instead of crashing silently
+- Unexpected failures at the command layer should be surfaced to the console and converted to exit code `1`
 
-## ディレクトリ構造
+## Libraries in use
 
-- `src/DnZip/`: プロジェクトのソースコード。
-- `src/DnZip/Program.cs`: メインのエントリポイントと圧縮ロジック。
-- `src/DnZip.slnx`: XMLベースのソリューションファイル。
-- `src/DnZip/bin/` & `src/DnZip/obj/`: ビルド生成物 (git ignore対象）。
+### ZIP handling: SharpZipLib
 
----
+- ZIP creation uses `ICSharpCode.SharpZipLib`
+- Use `Encoding.GetEncoding("Shift_JIS")` for archive entry compatibility with Windows tools
+- Register code pages first with:
 
-## エージェント向けのルールとベストプラクティス
+```csharp
+Encoding.RegisterProvider(CodePagesEncodingProvider.Instance);
+```
 
-1. **インデントの維持**: スペース2つのインデントスタイルを変更しないでください。
-2. **エンコーディングプロバイダー**: `Shift_JIS` を使用する前に、必ず `Encoding.RegisterProvider(CodePagesEncodingProvider.Instance)` を呼び出す必要があります。
-3. **相対パス**: ZIPアーカイブにファイルを追加する際は、`Path.GetRelativePath` を使用してアーカイブ内での正しいエントリパスを決定してください。
-4. **HACKコメント**: 実装済みの機能でない限り、`HACK` コメントを削除しないでください。
+- Compression level is set to best compression via `zipStream.SetLevel(9)`
+- Use `Path.GetRelativePath` and `ZipEntry.CleanName` when building archive paths
+
+### CLI framework: ConsoleAppFramework
+
+- The entry point remains `ConsoleApp.RunAsync(args, command.Compress)`
+- Command parameters become CLI arguments/options automatically
+
+### Password prompting: Sharprompt
+
+- Production password input goes through `IPasswordPrompt`
+- `SharpromptPasswordPrompt` is the concrete implementation and should call `Prompt.Password(...)`
+- For tests, prefer fake implementations over static hooks
+
+## Agent rules and best practices
+
+1. Preserve 2-space indentation.
+2. Do not remove these existing HACK comments unless the corresponding feature is actually implemented:
    - `HACK: 複数ファイル指定に対応`
    - `HACK: --no-dir-entries(-D) に対応`
-5. **コミュニケーション**: ユーザーとの対話は日本語で行ってください。
-6. **Git操作**: ユーザーの明示的な指示がない限り、勝手に `git commit` や `git push` を行わないでください。
-7. **アトミックな変更**: 変更は焦点を絞り、アトミックに保ってください。各変更をビルドで検証してください。
-8. **ドキュメント**: CLI引数を変更した場合は、新しい構文やオプションを反映するように `README.md` を更新してください。
+3. Keep `Program` thin; prefer extracting behavior into classes with explicit dependencies.
+4. If a dependency needs to be faked in tests, introduce an interface and inject it rather than adding static test hooks.
+5. Keep tests focused per class and per responsibility.
+6. Run verification after changes. For test-related work, prefer running commands from `src/DnZip.Tests/`.
+7. Do not run `git commit` or `git push` unless the user explicitly asks.
+8. If CLI syntax changes, update `README.md` as part of the same change.
 
----
+## Verification checklist
 
-## 検証チェックリスト
-
-- [ ] コードがスペース2つのインデントにしたがっている。
-- [ ] `dotnet build` でビルドが成功する。
-- [ ] 新しいコンパイラ警告が導入されていない。
-- [ ] 終了コードが正しく処理されている（成功時0、エラー時1）。
-- [ ] パスワードプロンプトが安全である（`Sharprompt`を使用）。
+- [ ] Code follows 2-space indentation
+- [ ] `dotnet build` succeeds
+- [ ] No new compiler warnings are introduced
+- [ ] Exit codes remain correct (`0` on success, `1` on failure)
+- [ ] Password prompting stays behind `IPasswordPrompt`
+- [ ] Tests remain one-file-per-class
